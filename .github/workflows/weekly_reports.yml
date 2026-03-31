@@ -1,0 +1,34 @@
+name: Генерация табелей явки
+
+on:
+  schedule:
+    # Каждый понедельник в 08:00 по московскому времени (05:00 UTC)
+    - cron: '0 5 * * 1'
+
+  # Можно запустить вручную из интерфейса GitHub
+  workflow_dispatch:
+
+jobs:
+  generate-and-send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Установить зависимости
+        run: pip install openpyxl requests
+
+      - name: Запустить скрипт
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          EMAIL_SENDER:       ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD:     ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVER:     ${{ secrets.EMAIL_RECEIVER }}
+        run: python generate_reports.py
