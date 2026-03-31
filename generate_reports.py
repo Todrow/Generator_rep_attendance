@@ -94,7 +94,7 @@ def send_telegram(file_path: str):
     # Сначала отправляем сообщение
     requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-        data={"chat_id": TELEGRAM_CHAT_ID, "text": "📊 Табели явки на текущую неделю:"},
+        data={"chat_id": TELEGRAM_CHAT_ID, "text": "📊 Табель явки:"},
     )
 
     with open(file_path, "rb") as f:
@@ -105,7 +105,7 @@ def send_telegram(file_path: str):
         print(f"  ✗ Telegram ошибка: {resp.text}")
 
 
-def send_email(file_paths: list[str]):
+def send_email(file_path: str):
     """Отправляет файлы на Email через Gmail SMTP."""
     if not EMAIL_SENDER or not EMAIL_PASSWORD or not EMAIL_RECEIVER:
         print("⚠️  Email не настроен — пропускаем.")
@@ -114,16 +114,16 @@ def send_email(file_paths: list[str]):
     msg = MIMEMultipart()
     msg["From"]    = EMAIL_SENDER
     msg["To"]      = EMAIL_RECEIVER
-    msg["Subject"] = f"Табели явки — неделя {date.today().strftime('%d.%m.%Y')}"
-    msg.attach(MIMEText("Добрый день!\n\nВо вложении табели явки на текущую неделю.", "plain", "utf-8"))
+    msg["Subject"] = f"Табель явки {date.today().strftime('%d.%m.%Y')}"
+    msg.attach(MIMEText("Добрый день!\n\nВо вложении табель явки на сегодня.", "plain", "utf-8"))
 
-    for path in file_paths:
-        with open(path, "rb") as f:
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(f.read())
-        encoders.encode_base64(part)
-        part.add_header("Content-Disposition", f'attachment; filename="{os.path.basename(path)}"')
-        msg.attach(part)
+    with open(file_path, "rb") as f:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(f.read())
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition",
+                    f'attachment; filename="{os.path.basename(file_path)}"')
+    msg.attach(part)
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
