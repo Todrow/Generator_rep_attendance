@@ -15,6 +15,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from openpyxl import load_workbook
+import datetime
 
 # ──────────────────────────────────────────────
 # НАСТРОЙКИ — заполни перед использованием
@@ -27,7 +28,7 @@ EMAIL_SENDER   = os.environ.get("EMAIL_SENDER",   "")   # твой gmail
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")   # пароль приложения Gmail
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")   # куда слать
 
-TEMPLATE_PATH = "template.xlsx"   # шаблон — копия оригинального файла
+# TEMPLATE_PATH = "template.xlsx"   # шаблон — копия оригинального файла
 
 # ──────────────────────────────────────────────
 
@@ -41,6 +42,17 @@ DAYS_RU = {
     6: "Воскресенье",
 }
 
+# Сопоставление дней недели и файлов
+days_to_files = {
+    'Понедельник': 'Понедельник.xlsx',
+    'Вторник': 'Вторник.xlsx',
+    'Среда': 'Среда.xlsx',
+    'Четверг': 'Четверг.xlsx',
+    'Пятница': 'Пятница.xlsx',
+    'Суббота': 'Суббота.xlsx',
+    'Воскресенье': None   # Нет файла
+}
+
 
 def get_week_dates() -> list[date]:
     """Возвращает даты текущей недели (пн–вс)."""
@@ -49,22 +61,22 @@ def get_week_dates() -> list[date]:
     return [monday + timedelta(days=i) for i in range(7)]
 
 
-def generate_file(target_date: date) -> str:
+def generate_file() -> str:
     """Копирует шаблон, подставляет дату, возвращает путь к файлу."""
-    day_name = DAYS_RU[target_date.weekday()]
-    filename = f"{day_name}_{target_date.strftime('%d_%m_%Y')}.xlsx"
+    today = datetime.datetime.now().date()
+    day_name = DAYS_RU[today.weekday()]
+    filename = f"{day_name} {today.strftime('%d.%m.%Y')}.xlsx"
     output_path = os.path.join("output", filename)
 
     os.makedirs("output", exist_ok=True)
-    shutil.copy(TEMPLATE_PATH, output_path)
+    shutil.copy(days_to_files[day_name], output_path)
 
     wb = load_workbook(output_path)
     ws = wb.active
 
     # Меняем только дату в A3, форматируем как ДД.ММ.ГГГГ
-    import datetime
-    ws["A3"] = datetime.datetime(target_date.year, target_date.month, target_date.day)
-    ws["A3"].number_format = "DD.MM.YYYY"
+    current_date = today.strftime("%d.%m.%Y")
+    ws.cell(row=3, column=1).value = current_date
 
     wb.save(output_path)
     print(f"  ✓ Создан: {filename}")
