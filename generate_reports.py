@@ -83,7 +83,7 @@ def generate_file() -> str:
     return output_path
 
 
-def send_telegram(file_paths: list[str]):
+def send_telegram(file_path: str):
     """Отправляет файлы в Telegram."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️  Telegram не настроен — пропускаем.")
@@ -97,13 +97,12 @@ def send_telegram(file_paths: list[str]):
         data={"chat_id": TELEGRAM_CHAT_ID, "text": "📊 Табели явки на текущую неделю:"},
     )
 
-    for path in file_paths:
-        with open(path, "rb") as f:
-            resp = requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID}, files={"document": f})
-        if resp.ok:
-            print(f"  ✓ Telegram: {os.path.basename(path)}")
-        else:
-            print(f"  ✗ Telegram ошибка: {resp.text}")
+    with open(file_path, "rb") as f:
+        resp = requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID}, files={"document": f})
+    if resp.ok:
+        print(f"  ✓ Telegram: {os.path.basename(file_path)}")
+    else:
+        print(f"  ✗ Telegram ошибка: {resp.text}")
 
 
 def send_email(file_paths: list[str]):
@@ -136,13 +135,13 @@ def send_email(file_paths: list[str]):
 def main():
     print("🗓  Генерация файлов...")
     week_dates = get_week_dates()
-    generated = [generate_file(d) for d in week_dates]
+    generated = generate_file()
 
     print("\n📨 Отправка в Telegram...")
     send_telegram(generated)
 
     print("\n📧 Отправка по Email...")
-    send_email(generated)
+    # send_email(generated)
 
     print("\n✅ Готово!")
 
